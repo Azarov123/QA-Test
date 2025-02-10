@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование на тему 1, 2, 3</title>
+    <style>
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 20px; /* Увеличенный размер шрифта */
+			line-height: 1.8; /* Увеличенный интервал между строками */
+		}
+
+		h1 {
+			font-size: 26px; /* Увеличенный заголовок */
+			font-weight: bold;
+		}
+
+		#questionText {
+			font-size: 24px; /* Увеличенный размер текста вопроса */
+			font-weight: bold;
+		}
+
+		.options label {
+			font-size: 20px; /* Увеличенный размер текста для вариантов ответов */
+			display: block;
+			padding: 5px 0;
+		}
+		.container {
+			max-width: 700px; /* Увеличиваем ширину блока */
+			margin: 20px auto; /* Центрируем */
+			padding: 20px;
+			background-color: #f9f9f9; /* Светло-серый фон */
+			border-radius: 10px; /* Закругленные углы */
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Тень */
+		}
+        .hidden {
+            display: none;
+        }
+        .question {
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+        .options label {
+            display: block;
+            margin: 5px 0;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+		#startTest {
+			background-color: grey;
+			cursor: not-allowed;
+			font-size: 20px;
+			padding: 12px 24px;
+			border-radius: 5px;
+		}
+		#userName {
+			width: 280px; /* Делаем ширину такой же, как у кнопки */
+			height: 50px; /* Делаем высоту такой же, как у кнопки */
+			font-size: 18px;
+			padding: 8px;
+			border-radius: 5px;
+			border: 1px solid #ccc;
+			box-sizing: border-box;
+		}
+		#startTest.active {
+			background-color: green;
+			cursor: pointer;
+		}
+		#submitBtn {
+			background-color: #007BFF; /* Синий цвет */
+			color: white;
+			font-size: 20px;
+			padding: 12px 24px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: background 0.3s;
+		}
+
+		#submitBtn:hover {
+			background-color: #0056b3; /* Темнее при наведении */
+		}
+        #submitBtn.active {
+            background-color: green;
+            cursor: pointer;
+        }
+        .correct {
+            background-color: lightgreen !important;
+        }
+        .incorrect {
+            background-color: lightcoral !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="nameInputSection">
+            <h1>Введите ваше имя</h1>
+            <p>На прохождение теста 10 минут.</p>
+            <input type="text" id="userName" placeholder="Ваше имя" minlength="3">
+            <button id="startTest" disabled style="margin-left: 40px;">Начать тест</button>
+        </div>
+        <div id="testSection" class="hidden">
+            <h1>Тестирование</h1>
+            <div id="timer" style="font-size: 20px; font-weight: bold;">10:00</div>
+			<div id="questionTime"></div>
+            <div id="questionText" class="question"></div>
+            <div id="optionsContainer" class="options"></div>
+            <button id="submitBtn" disabled>Выполнить</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        const totalQuestions = 20;
+        const correctAnswers = [
+    1, 2, 3, 4, 1, 2, 3, 4, 1, 2,  // 5 единиц, 5 двоек
+    3, 4, 1, 2, 3, 4, 1, 2, 3, 4   // 5 троек, 5 четверок
+];
+        const questions = [
+    // ТЕМА 1: Основы тестирования
+    "Что такое тестирование программного обеспечения?",  // 1
+    "Какая главная цель тестирования?",  // 2
+    "Что такое smoke-тестирование?",  // 3
+    "Какая разница между функциональным и нефункциональным тестированием?",  // 4
+    "Что такое тестирование 'черного ящика'?",  // 5
+
+    // ТЕМА 2: Анализ требований
+    "Что такое анализ требований?",  // 6
+    "Какой документ используется для сбора требований?",  // 7
+    "Что означает термин 'нефункциональные требования'?",  // 8
+    "Какое требование является функциональным?",  // 9
+    "Почему важно вовлекать тестировщиков в анализ требований?",  // 10
+
+    // ТЕМА 3: Баг-репорты
+    "Что такое баг-репорт?",  // 11
+    "Какой атрибут обязателен в баг-репорте?",  // 12
+    "Какая информация указывается в шагах воспроизведения бага?",  // 13
+    "Что значит статус бага 'Deferred'?",  // 14
+    "Как правильно описать ожидаемый результат в баг-репорте?",  // 15
+
+    // Дополнительные вопросы
+    "Что делать, если баг не воспроизводится?",  // 16
+    "Какой инструмент помогает управлять багами?",  // 17
+    "Чем отличается дефект от инцидента?",  // 18
+    "Что такое регрессионное тестирование?",  // 19
+    "Когда стоит закрывать баг?"  // 20
+];
+		const options = [
+    ["Процесс поиска дефектов в ПО", "Методология написания кода", "Оптимизация программного кода", "Автоматизация процессов тестирования"], // 1
+    ["Обеспечение качества продукта", "Гарантия отсутствия ошибок", "Повышение скорости разработки", "Сокращение времени на релиз"], // 2
+    ["Минимальный набор тестов для проверки стабильности системы", "Полное тестирование продукта", "Тестирование безопасности системы", "Тестирование API-интерфейсов"], // 3
+    ["Функциональное тестирование проверяет 'что', нефункциональное — 'как'", "Они полностью идентичны", "Нефункциональное тестирование не влияет на пользователя", "Функциональное тестирование включает только UI-тесты"], // 4
+    ["Метод тестирования без знания кода", "Метод тестирования, основанный на исходном коде", "Метод тестирования API", "Метод тестирования баз данных"], // 5
+
+    ["Изучение требований к ПО", "Поиск багов", "Написание тест-кейсов", "Рефакторинг кода"], // 6
+    ["SRS (Спецификация требований)", "Тест-кейс", "Чек-лист", "Отчет о тестировании"], // 7
+    ["Требования, описывающие производительность и надежность", "Требования, описывающие функциональность системы", "Требования, описывающие только безопасность", "Требования, написанные без спецификаций"], // 8
+    ["Система должна обрабатывать платежи", "Система должна быть удобной", "Система должна быть защищенной", "Система должна быть быстрой"], // 9
+    ["Тестировщики могут выявить проблемы до разработки", "Тестировщики не участвуют в анализе требований", "Тестировщики заменяют бизнес-аналитиков", "Тестировщики не должны читать требования"], // 10
+
+    ["Документ с описанием дефекта", "Документ с требованиями к системе", "Документ с инструкцией по тестированию", "Документ с архитектурой системы"], // 11
+    ["Шаги воспроизведения бага", "Имя разработчика", "Код функции, где баг", "Дата релиза"], // 12
+    ["Последовательность действий, приводящая к багу", "Список всех найденных багов", "Логи системы", "Описание исправления"], // 13
+    ["Исправление бага отложено на будущее", "Баг отклонен как нерелевантный", "Баг принят к исправлению", "Баг требует немедленного исправления"], // 14
+    ["Четкое описание ожидаемого поведения системы", "Пример кода, как исправить баг", "Лог системных сообщений", "Скриншот ошибки"], // 15
+
+    ["Проверить шаги и попробовать снова", "Закрыть баг как нерелевантный", "Удалить баг-репорт", "Отправить разработчику без изменений"], // 16
+    ["JIRA", "Excel", "Slack", "Trello"], // 17
+    ["Дефект — это ошибка в коде, инцидент — это баг, обнаруженный пользователем", "Это одно и то же", "Дефект — это просто ошибка, а инцидент — исправленный баг", "Инцидент — это баг в тестовом окружении"], // 18
+    ["Тестирование после исправления багов", "Тестирование перед релизом", "Тестирование новых функций", "Тестирование API"], // 19
+    ["После исправления и успешного тестирования", "Сразу после исправления разработчиком", "Когда тестировщик решит", "Когда менеджер попросит"] // 20
+];
+        const userAnswers = Array(totalQuestions).fill(null);
+        const answerTimes = Array(totalQuestions).fill(0);
+        let startTime, previousAnswerTime, timerInterval;
+
+        const userNameInput = document.getElementById('userName');
+        const startTestBtn = document.getElementById('startTest');
+        const testSection = document.getElementById('testSection');
+        const nameInputSection = document.getElementById('nameInputSection');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const submitBtn = document.getElementById('submitBtn');
+        const timer = document.getElementById('timer');
+
+        // Активируем кнопку "Начать тест"
+        userNameInput.addEventListener('input', () => {
+            if (userNameInput.value.trim().length >= 3) {
+                startTestBtn.disabled = false;
+                startTestBtn.classList.add('active');
+            } else {
+                startTestBtn.disabled = true;
+                startTestBtn.classList.remove('active');
+            }
+        });
+
+        // Запуск теста
+        startTestBtn.addEventListener('click', () => {
+            nameInputSection.classList.add('hidden');
+            testSection.classList.remove('hidden');
+            startTime = Date.now();
+            previousAnswerTime = startTime;
+            startTimer();
+            loadQuestion();
+        });
+
+        // Таймер
+		function startTimer() {
+			let totalTime = 10 * 60 * 1000; // 10 минут в миллисекундах
+			remaining = totalTime; // Глобальная переменная
+
+			function updateTimer() {
+				const elapsed = Date.now() - startTime;
+				remaining = totalTime - elapsed;
+
+				if (remaining <= 0) {
+					clearInterval(timerInterval);
+					displayResults(); // Завершение теста
+					return;
+				}
+
+				const minutes = Math.floor(remaining / 60000);
+				const seconds = Math.floor((remaining % 60000) / 1000);
+				timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+			}
+
+			timerInterval = setInterval(updateTimer, 1000);
+		}
+
+		// Загрузка вопроса
+		function loadQuestion() {
+			if (currentQuestion >= totalQuestions || remaining <= 0) { 
+				displayResults();
+				return;
+			}
+
+			// Обновляем текст вопроса
+			questionText.textContent = `Вопрос ${currentQuestion + 1}: ${questions[currentQuestion]}`;
+
+			// Получаем правильный индекс ДО перемешивания
+			const correctIndex = correctAnswers[currentQuestion]; // Запоминаем правильный ответ
+
+			// Перемешиваем варианты ответов
+			const shuffledOptions = options[currentQuestion]
+				.map((text, index) => ({ text, index: index + 1 })) // Добавляем оригинальный индекс
+				.sort(() => Math.random() - 0.5);
+
+			// Обновляем правильный ответ ПОСЛЕ перемешивания
+			const newCorrectIndex = shuffledOptions.findIndex(option => option.index === correctIndex) + 1;
+			correctAnswers[currentQuestion] = newCorrectIndex; // Обновляем индекс правильного ответа
+
+			// Выводим перемешанные варианты
+			optionsContainer.innerHTML = shuffledOptions
+				.map(option => `<label><input type="radio" name="answer" value="${option.index}"> ${option.text}</label>`)
+				.join('');
+
+			// Отключаем кнопку "Выполнить"
+			submitBtn.disabled = true;
+			submitBtn.classList.remove('active');
+
+			// Активация кнопки при выборе ответа
+			optionsContainer.addEventListener('change', () => {
+				submitBtn.disabled = false;
+				submitBtn.classList.add('active');
+			});
+
+			// Отображаем время, затраченное на предыдущий вопрос
+			const timeSpent = answerTimes[currentQuestion - 1] || 0; // Берем время предыдущего вопроса
+			const minutesSpent = Math.floor(timeSpent / 60);
+			const secondsSpent = timeSpent % 60;
+			document.getElementById('questionTime').textContent = `Время на предыдущий вопрос: ${minutesSpent}:${secondsSpent}`;
+		}
+
+		// Делегирование событий для отправки ответов
+		document.addEventListener('click', (event) => {
+			if (event.target.name === 'answer') {
+				submitBtn.disabled = false;
+				submitBtn.classList.add('active');
+			}
+
+			if (event.target.id === 'submitBtn') {
+				handleAnswerSubmission();
+			}
+		});
+
+		function handleAnswerSubmission() {
+			if (remaining <= 0) return; // Запрещаем отправку ответа после окончания времени
+
+			const selectedOption = document.querySelector('input[name="answer"]:checked');
+			if (!selectedOption) return;
+
+            const currentTime = Date.now();
+            const answerTime = Math.floor((currentTime - (previousAnswerTime || startTime)) / 1000);
+            previousAnswerTime = currentTime;
+
+            userAnswers[currentQuestion] = parseInt(selectedOption.value);
+            answerTimes[currentQuestion] = answerTime;
+
+            currentQuestion++;
+            loadQuestion();
+        }
+
+        // Вывод результатов
+		function displayResults() {
+			const resultsWindow = window.open("", "_blank");
+			resultsWindow.document.write("<!DOCTYPE html><html lang='ru'><head><meta charset='UTF-8'><title>Результаты теста</title>");
+			resultsWindow.document.write("<style>");
+			resultsWindow.document.write(".correct { background-color: lightgreen; } .incorrect { background-color: lightcoral; }");
+			resultsWindow.document.write(".summary { font-weight: bold; background-color: yellow; }"); // Стиль для итоговой строки
+			resultsWindow.document.write("</style></head><body>");
+			
+			resultsWindow.document.write("<h1>Результаты теста</h1>");
+			resultsWindow.document.write("<table border='1'><tr><th>Вопрос</th><th>Ответ</th><th>Правильный ответ</th><th>Время ответа</th></tr>");
+
+			let totalTime = 0;
+			let correctCount = 0;
+
+			userAnswers.forEach((answer, index) => {
+				const timeSpent = answerTimes[index] || 0;
+				totalTime += timeSpent;
+				const minutesSpent = Math.floor(timeSpent / 60);
+				const secondsSpent = timeSpent % 60;
+				const isCorrect = answer === correctAnswers[index];
+
+				if (isCorrect) correctCount++;
+
+				const cellClass = isCorrect ? "correct" : "incorrect";
+				resultsWindow.document.write(`
+					<tr>
+						<td>${index + 1}</td>
+						<td class="${cellClass}">${answer || 'Не ответил'}</td>
+						<td>${correctAnswers[index]}</td>
+						<td>${String(minutesSpent).padStart(2, '0')}:${String(secondsSpent).padStart(2, '0')}</td>
+					</tr>
+				`);
+			});
+
+			// Добавляем строку с общим временем
+			const totalMinutes = Math.floor(totalTime / 60);
+			const totalSeconds = totalTime % 60;
+			resultsWindow.document.write(`
+				<tr>
+					<td colspan="3"><b>Общее время на прохождение теста</b></td>
+					<td><b>${String(totalMinutes).padStart(2, '0')}:${String(totalSeconds).padStart(2, '0')}</b></td>
+				</tr>
+			`);
+
+			// Добавляем строку с количеством правильных ответов (яркую)
+			resultsWindow.document.write(`
+				<tr class="summary">
+					<td colspan="3"><b>Правильных ответов</b></td>
+					<td><b>${correctCount} из 20</b></td>
+				</tr>
+			`);
+
+			resultsWindow.document.write("</table></body></html>");
+			resultsWindow.document.close();
+		}
+    </script>
+</body>
+</html>
